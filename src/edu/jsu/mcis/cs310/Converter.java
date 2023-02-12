@@ -170,8 +170,6 @@ public class Converter {
                 JsonArray containerArray = (JsonArray)dataArray.get(i);
                 String[] data = new String[colArray.size()];
                 
-                System.out.println(containerArray.size());
-                
                 for (int j = 0; j <= containerArray.size(); j++) {
                     
                     if (j==0) {
