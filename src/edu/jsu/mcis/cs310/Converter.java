@@ -2,6 +2,11 @@ package edu.jsu.mcis.cs310;
 
 import com.github.cliftonlabs.json_simple.*;
 import com.opencsv.*;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class Converter {
     
@@ -77,14 +82,60 @@ public class Converter {
         String result = "{}"; // default return value; replace later!
         
         try {
-        
-            // INSERT YOUR CODE HERE
+             
+            CSVReader reader = new CSVReader(new StringReader(csvString));
+            List<String[]> full = reader.readAll();
+            Iterator<String[]> iterator = full.iterator();
             
+            JsonArray prodArray = new JsonArray();
+            JsonArray dataArray = new JsonArray();
+            
+            LinkedHashMap<String, Object> json = new LinkedHashMap();
+            
+            if (iterator.hasNext()) {
+                
+                String[] colHeading = iterator.next();
+                
+                while(iterator.hasNext()) {
+                    
+                    String[] temp = iterator.next();
+                    
+                    JsonArray containerArray = new JsonArray();
+                    
+                    for (int i = 0; i < colHeading.length; i++) {
+                        if (i == 0) {
+                            prodArray.add(temp[i]);
+                        }
+                        else if (i == 1) {
+                            containerArray.add(temp[i]);
+                        }
+                        else if (i < 4) {
+                            containerArray.add(Integer.valueOf(temp[i]));
+                        }
+                        else if (i < 6) {
+                            containerArray.add(temp[i]);
+                        }
+                        else {
+                            containerArray.add(temp[i]);
+                        }
+                    }
+                    
+                    dataArray.add(containerArray);
+                }
+                
+                json.put("ProdNums", prodArray);
+                json.put("ColHeadings", colHeading);
+                json.put("Data", dataArray);
+                
+            }
+               
+            result = Jsoner.serialize(json);
         }
+        
         catch (Exception e) {
             e.printStackTrace();
         }
-        
+  
         return result.trim();
         
     }
@@ -96,8 +147,51 @@ public class Converter {
         
         try {
             
-            // INSERT YOUR CODE HERE
+            JsonObject jsonObject = Jsoner.deserialize(jsonString, new JsonObject());
             
+            JsonArray prodArray = (JsonArray)jsonObject.get("ProdNums");
+            JsonArray colArray = (JsonArray)jsonObject.get("ColHeadings");
+            JsonArray dataArray = (JsonArray)jsonObject.get("Data");
+            
+            StringWriter writer = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(writer, ',', '"', '\\', "\n");
+            
+            String[] colHeadings = new String[colArray.size()];
+            
+            for (int i = 0; i < colArray.size(); i++) {
+                String temp = colArray.get(i).toString();
+                colHeadings[i] = temp;
+            }
+            
+            csvWriter.writeNext(colHeadings);
+            
+            for(int i = 0; i < prodArray.size(); i++) {
+                
+                JsonArray containerArray = (JsonArray)dataArray.get(i);
+                String[] data = new String[colArray.size()];
+                
+                System.out.println(containerArray.size());
+                
+                for (int j = 0; j <= containerArray.size(); j++) {
+                    
+                    if (j==0) {
+                        data[j] = prodArray.get(i).toString();
+                    }
+                    else if (j < 3){
+                        data[j] = containerArray.get(j-1).toString();
+                    }
+                    else if (j==3) {
+                        String temp = String.format("%02d", Integer.parseInt(containerArray.get(j-1).toString()));
+                        data[j] = temp;
+                    }
+                    else {
+                        data[j] = containerArray.get(j-1).toString();
+                    }
+                    
+                }
+                csvWriter.writeNext(data);
+            }
+            result = writer.toString();
         }
         catch (Exception e) {
             e.printStackTrace();
